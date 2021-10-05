@@ -1,16 +1,17 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
 	"os"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/lestrrat-go/jwx/jwt"
 )
 
-const VERSION = "v0.1.0"
+const VERSION = "v0.2.0"
 
 var (
 	flags = flag.NewFlagSet("jwtutil", flag.ExitOnError)
@@ -43,24 +44,19 @@ func main() {
 			return
 		}
 
-		token, err := jwt.Parse(*fToken, func(token *jwt.Token) (interface{}, error) {
-			if token.Method.Alg() != "HS256" {
-				log.Fatalf("Unexpected signing method: %v", token.Header["alg"])
-			}
-			return []byte(*fSecret), nil
-		})
-		fmt.Println("\nToken decoding details:")
+		token, err := jwt.Parse([]byte(*fToken), jwt.WithVerify("HS256", []byte(*fSecret)))
 		if err != nil {
-			fmt.Printf(" * %v\n", err)
+			log.Fatal(err)
 		}
-		if !token.Valid {
+		fmt.Println("\nToken decoding details:")
+		if err := jwt.Validate(token); err != nil {
 			fmt.Println(" * Token is invalid!")
 		} else {
 			fmt.Println(" * Token is valid!")
 		}
 
 		fmt.Printf("\nToken claims:\n")
-		claims, _ := token.Claims.(jwt.MapClaims)
+		claims, _ := token.AsMap(context.Background())
 		for k, v := range claims {
 			fmt.Printf(" * %v: %+v\n", k, v)
 		}
@@ -71,9 +67,9 @@ func main() {
 
 	if *fEncode {
 		// Encode new JWT token.
-		token := jwt.New(jwt.GetSigningMethod("HS256"))
+		token := jwt.New()
 
-		claims := jwt.MapClaims{} // aka, map[string]interface{}
+		var claims map[string]interface{}
 		if *fClaims != "" {
 			err := json.Unmarshal([]byte(*fClaims), &claims)
 			if err != nil {
@@ -81,22 +77,29 @@ func main() {
 				return
 			}
 		}
-
-		if *fExp > 0 {
-			claims["exp"] = *fExp
+		for k, v := range claims {
+			err := token.Set(k, v)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 
-		token.Claims = claims
-		tokenStr, err := token.SignedString([]byte(*fSecret))
+		if *fExp > 0 {
+			token.Set("exp", *fExp)
+		}
+
+		tokenPayload, err := jwt.Sign(token, "HS256", []byte(*fSecret))
 		if err != nil {
 			log.Fatal(err)
 		}
+		tokenStr := string(tokenPayload)
 
 		fmt.Fprintln(os.Stderr)
-
 		fmt.Println("Token:", tokenStr)
 
+		claims, _ = token.AsMap(context.Background())
 		fmt.Fprintf(os.Stderr, "\nClaims: %#v\n", claims)
+		fmt.Fprintln(os.Stderr)
 
 		return
 	}
