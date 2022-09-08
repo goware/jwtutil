@@ -32,11 +32,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	if *fSecret == "" && *fSecret != "<>" {
-		fmt.Println("jwtutil: secret is empty.")
-		return
-	}
-
 	if *fDecode {
 		// Decode passed jwt token string
 		if *fToken == "" {
@@ -44,15 +39,26 @@ func main() {
 			return
 		}
 
-		token, err := jwt.Parse([]byte(*fToken), jwt.WithVerify("HS256", []byte(*fSecret)))
+		var token jwt.Token
+		var err error
+
+		if *fSecret != "" {
+			token, err = jwt.Parse([]byte(*fToken), jwt.WithVerify("HS256", []byte(*fSecret)))
+		} else {
+			token, err = jwt.Parse([]byte(*fToken))
+		}
+
 		if err != nil {
 			log.Fatal(err)
 		}
 		fmt.Println("\nToken decoding details:")
-		if err := jwt.Validate(token); err != nil {
-			fmt.Println(" * Token is invalid!")
-		} else {
-			fmt.Println(" * Token is valid!")
+
+		if *fSecret != "" {
+			if err := jwt.Validate(token); err != nil {
+				fmt.Println(" * Token is invalid!")
+			} else {
+				fmt.Println(" * Token is valid!")
+			}
 		}
 
 		fmt.Printf("\nToken claims:\n")
@@ -62,6 +68,11 @@ func main() {
 		}
 		fmt.Println()
 
+		return
+	}
+
+	if *fSecret == "" && *fSecret != "<>" {
+		fmt.Println("jwtutil: secret is empty.")
 		return
 	}
 
