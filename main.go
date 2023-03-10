@@ -8,7 +8,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/lestrrat-go/jwx/jwt"
+	"github.com/lestrrat-go/jwx/v2/jwa"
+	"github.com/lestrrat-go/jwx/v2/jwt"
 )
 
 const VERSION = "v0.3.1"
@@ -43,7 +44,7 @@ func main() {
 		var err error
 
 		if *fSecret != "" {
-			token, err = jwt.Parse([]byte(*fToken), jwt.WithVerify("HS256", []byte(*fSecret)))
+			token, err = jwt.Parse([]byte(*fToken), jwt.WithKey(jwa.HS256, []byte(*fSecret)))
 		} else {
 			token, err = jwt.Parse([]byte(*fToken))
 		}
@@ -99,7 +100,7 @@ func main() {
 			token.Set("exp", *fExp)
 		}
 
-		tokenPayload, err := jwt.Sign(token, "HS256", []byte(*fSecret))
+		tokenPayload, err := jwt.Sign(token, jwt.WithKey(jwa.HS256, []byte(*fSecret)))
 		if err != nil {
 			log.Fatal(err)
 		}
