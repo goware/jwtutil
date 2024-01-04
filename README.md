@@ -3,7 +3,7 @@ jwtutil
 
 ## Install
 
-`go get github.com/goware/jwtutil`
+`go install github.com/goware/jwtutil@latest`
 
 
 ## Usage
