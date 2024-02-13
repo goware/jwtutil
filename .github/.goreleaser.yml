@@ -49,7 +49,7 @@ brews:
   - name: jwtutil
     ids:
       - jwtutil
-    tap:
+    repository:
       owner: goware
       name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
