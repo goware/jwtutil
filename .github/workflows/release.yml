@@ -45,6 +45,6 @@ jobs:
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
       - name: Docker build
         run: |
-          docker buildx build --platform="linux/amd64,linux/arm64" --build-arg VERSION=${GITHUB_REF##*/} -t ghcr.io/goware/jwtutil:${GITHUB_REF##*/} -t ghcr.io/goware/jwtutil:latest .
+          docker buildx build --push --platform="linux/amd64,linux/arm64" --build-arg VERSION=${GITHUB_REF##*/} -t ghcr.io/goware/jwtutil:${GITHUB_REF##*/} -t ghcr.io/goware/jwtutil:latest .
           docker push ghcr.io/goware/jwtutil:${GITHUB_REF##*/}
           docker push ghcr.io/goware/jwtutil:latest
