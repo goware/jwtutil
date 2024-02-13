@@ -1,18 +1,15 @@
 # -----------------------------------------------------------------
 # Builder
 # -----------------------------------------------------------------
-FROM --platform=$BUILDPLATFORM golang:1.22.0-alpine3.19 as builder
-
+FROM golang:1.22.0-alpine3.19 as builder
 ARG VERSION
-ARG TARGETOS
-ARG TARGETARCH
 
 RUN apk add --update git
 
 ADD ./ /src
 
 WORKDIR /src
-RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags="-s -w -X main.VERSION=${VERSION}" -o /usr/bin/jwtutil .
+RUN go build -ldflags="-s -w -X main.VERSION=${VERSION}" -o /usr/bin/jwtutil .
 
 # -----------------------------------------------------------------
 # Runner
