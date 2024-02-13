@@ -3,11 +3,17 @@ jwtutil
 
 ## Install
 
-`go install github.com/goware/jwtutil@latest`
+```
+$ brew tap goware/tap
+$ brew install jwtutil
+$ jwtutil
+```
 
-or 
+`$ docker run ghcr.io/goware/jwtutil`
 
-`docker run ghcr.io/goware/jwtutil`
+or
+
+`$ go install github.com/goware/jwtutil@latest`
 
 ## Usage
 
