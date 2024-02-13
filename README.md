@@ -9,6 +9,8 @@ $ brew install jwtutil
 $ jwtutil
 ```
 
+or
+
 `$ docker run ghcr.io/goware/jwtutil`
 
 or
