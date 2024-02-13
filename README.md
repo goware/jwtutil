@@ -5,6 +5,9 @@ jwtutil
 
 `go install github.com/goware/jwtutil@latest`
 
+or 
+
+`docker run ghcr.io/goware/jwtutil`
 
 ## Usage
 
