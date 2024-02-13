@@ -12,7 +12,7 @@ import (
 	"github.com/lestrrat-go/jwx/v2/jwt"
 )
 
-const VERSION = "v0.5.0"
+var VERSION = ""
 
 var (
 	flags = flag.NewFlagSet("jwtutil", flag.ExitOnError)
