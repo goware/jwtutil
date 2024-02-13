@@ -5,7 +5,6 @@ on:
     tags:
       - "v*"
 
-
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
@@ -26,8 +25,7 @@ jobs:
           args: release -f .github/.goreleaser.yml --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
 
   docker:
     runs-on: ubuntu-latest
