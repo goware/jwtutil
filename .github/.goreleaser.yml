@@ -1,0 +1,62 @@
+# See documentation at https://goreleaser.com/customization/build.
+project_name: jwtutil
+
+builds:
+  - id: jwtutil
+    main: .
+    binary: jwtutil
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.VERSION=v{{.Version}}
+
+archives:
+  - id: jwtutil
+    builds:
+      - jwtutil
+    name_template: "{{ .Binary }}.{{ .Os }}-{{ .Arch }}"
+    format: binary
+
+checksum:
+  name_template: "checksums.txt"
+
+release:
+  footer: |
+    ## Docker
+    ```
+    $ docker pull ghcr.io/goware/jwtutil:v{{.Version}}
+    ```
+
+    Example: `$ docker run ghcr.io/goware/jwtutil`
+
+    ## Homebrew
+    ```
+    $ brew tap goware/tap
+    $ brew install jwtutil
+    $ jwtutil
+    ```
+
+changelog:
+  use: github
+  sort: asc
+
+brews:
+  - name: jwtutil
+    ids:
+      - jwtutil
+    tap:
+      owner: goware
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    commit_author:
+      name: goreleaserbot
+      email: bot@goreleaser.com
+    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
+    homepage: "https://github.com/goware/jwtutil"
+    description: "handy little jwt debugging utility to encode/decode tokens"
+    license: "MIT"
