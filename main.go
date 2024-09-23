@@ -29,14 +29,14 @@ func main() {
 	flags.Parse(os.Args[1:])
 
 	if len(os.Args) < 3 {
-		fmt.Printf(usage, VERSION)
+		fmt.Fprintf(os.Stderr, usage, VERSION)
 		os.Exit(1)
 	}
 
 	if *fDecode {
 		// Decode passed jwt token string
 		if *fToken == "" {
-			fmt.Println("-token flag cannot be empty.")
+			fmt.Fprintln(os.Stderr, "-token flag cannot be empty.")
 			return
 		}
 
@@ -52,28 +52,28 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Println("\nToken decoding details:")
+		fmt.Fprintln(os.Stderr, "\nToken decoding details:")
 
 		if *fSecret != "" {
 			if err := jwt.Validate(token); err != nil {
-				fmt.Println(" * Token is invalid!")
+				fmt.Fprintln(os.Stderr, " * Token is invalid!")
 			} else {
-				fmt.Println(" * Token is valid!")
+				fmt.Fprintln(os.Stderr, " * Token is valid!")
 			}
 		}
 
-		fmt.Printf("\nToken claims:\n")
+		fmt.Fprintf(os.Stderr, "\nToken claims:\n")
 		claims, _ := token.AsMap(context.Background())
 		for k, v := range claims {
-			fmt.Printf(" * %v: %+v\n", k, v)
+			fmt.Fprintf(os.Stderr, " * %v: %+v\n", k, v)
 		}
-		fmt.Println()
+		fmt.Fprintln(os.Stderr)
 
 		return
 	}
 
 	if *fSecret == "" && *fSecret != "<>" {
-		fmt.Println("jwtutil: secret is empty.")
+		fmt.Fprintln(os.Stderr, "jwtutil: secret is empty.")
 		return
 	}
 
@@ -85,7 +85,7 @@ func main() {
 		if *fClaims != "" {
 			err := json.Unmarshal([]byte(*fClaims), &claims)
 			if err != nil {
-				fmt.Println("Error! -claims flag is invalid json.", err)
+				fmt.Fprintln(os.Stderr, "Error! -claims flag is invalid json.", err)
 				return
 			}
 		}
@@ -107,10 +107,11 @@ func main() {
 		tokenStr := string(tokenPayload)
 
 		fmt.Fprintln(os.Stderr)
-		fmt.Println("Token:", tokenStr)
+		fmt.Fprintln(os.Stderr, "Token:", tokenStr)
+		fmt.Printf("%s", tokenStr)
 
 		claims, _ = token.AsMap(context.Background())
-		fmt.Fprintf(os.Stderr, "\nClaims: %#v\n", claims)
+		fmt.Fprintf(os.Stderr, "\n\nClaims: %#v\n", claims)
 		fmt.Fprintln(os.Stderr)
 
 		return
