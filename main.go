@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 
@@ -12,12 +13,12 @@ import (
 	"github.com/lestrrat-go/jwx/v2/jwt"
 )
 
-var VERSION = ""
-
 var (
-	flags = flag.NewFlagSet("jwtutil", flag.ExitOnError)
+	VERSION = ""
 
+	flags   = flag.NewFlagSet("jwtutil", flag.ExitOnError)
 	fSecret = flags.String("secret", "", "JWT secret for encoding/decoding (be safe!!)")
+	fSilent = flags.Bool("silent", false, "Silent mode. Print JWT token only")
 	fEncode = flags.Bool("encode", false, "Encode new JWT token")
 	fDecode = flags.Bool("decode", false, "Decode existing JWT token")
 	fToken  = flags.String("token", "", "+decode, jwt token to decode")
@@ -29,14 +30,19 @@ func main() {
 	flags.Parse(os.Args[1:])
 
 	if len(os.Args) < 3 {
-		fmt.Printf(usage, VERSION)
+		fmt.Fprintf(os.Stderr, usage, VERSION)
 		os.Exit(1)
+	}
+
+	var stderr io.Writer = os.Stderr
+	if *fSilent {
+		stderr = io.Discard
 	}
 
 	if *fDecode {
 		// Decode passed jwt token string
 		if *fToken == "" {
-			fmt.Println("-token flag cannot be empty.")
+			fmt.Fprintln(stderr, "-token flag cannot be empty.")
 			return
 		}
 
@@ -52,28 +58,28 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Println("\nToken decoding details:")
+		fmt.Fprintln(stderr, "\nToken decoding details:")
 
 		if *fSecret != "" {
 			if err := jwt.Validate(token); err != nil {
-				fmt.Println(" * Token is invalid!")
+				fmt.Fprintln(stderr, " * Token is invalid!")
 			} else {
-				fmt.Println(" * Token is valid!")
+				fmt.Fprintln(stderr, " * Token is valid!")
 			}
 		}
 
-		fmt.Printf("\nToken claims:\n")
+		fmt.Fprintf(stderr, "\nToken claims:\n")
 		claims, _ := token.AsMap(context.Background())
 		for k, v := range claims {
-			fmt.Printf(" * %v: %+v\n", k, v)
+			fmt.Fprintf(stderr, " * %v: %+v\n", k, v)
 		}
-		fmt.Println()
+		fmt.Fprintln(stderr)
 
 		return
 	}
 
 	if *fSecret == "" && *fSecret != "<>" {
-		fmt.Println("jwtutil: secret is empty.")
+		fmt.Fprintln(stderr, "jwtutil: secret is empty.")
 		return
 	}
 
@@ -85,7 +91,7 @@ func main() {
 		if *fClaims != "" {
 			err := json.Unmarshal([]byte(*fClaims), &claims)
 			if err != nil {
-				fmt.Println("Error! -claims flag is invalid json.", err)
+				fmt.Fprintln(stderr, "Error! -claims flag is invalid json.", err)
 				return
 			}
 		}
@@ -106,12 +112,13 @@ func main() {
 		}
 		tokenStr := string(tokenPayload)
 
-		fmt.Fprintln(os.Stderr)
-		fmt.Println("Token:", tokenStr)
+		fmt.Fprintln(stderr)
+		fmt.Fprintln(stderr, "Token:", tokenStr)
+		fmt.Printf("%s", tokenStr)
 
 		claims, _ = token.AsMap(context.Background())
-		fmt.Fprintf(os.Stderr, "\nClaims: %#v\n", claims)
-		fmt.Fprintln(os.Stderr)
+		fmt.Fprintf(stderr, "\n\nClaims: %#v\n", claims)
+		fmt.Fprintln(stderr)
 
 		return
 	}
