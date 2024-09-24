@@ -1,5 +1,6 @@
-jwtutil
-=======
+# jwtutil
+
+CLI tool for encoding/decoding JWT tokens.
 
 ## Install
 
@@ -19,18 +20,30 @@ or
 
 ## Usage
 
-**New JWT token**\
+### Create JWT token
+```bash
 $ jwtutil -secret=besafe -encode
+```
 
-**New JWT token with expiry (unix timestamp value)**\
+### Create JWT token with expiry (unix timestamp value)
+```bash
 $ jwtutil -secret=besafe -encode -exp=1585272657
+```
 
-**New JWT token with custom claims**\
+### Create JWT token with expiry in 5 days
+```bash
+$ jwtutil -secret=besafe -encode -exp $(date +%s --date='5 days')
+```
+
+### Create JWT token with custom claims
+```bash
 $ jwtutil -secret=besafe -encode -claims='{"account":1234}'
+```
 
-**Decode JWT**\
+### Decode JWT
+```bash
 $ jwtutil -secret=besafe -decode -token='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2NvdW50IjoxMjM0fQ.WrPyTSoovFETG6pW0wFepaAv9-VTIfeSHU5imhPqs7g'
-
+```
 
 ## LICENSE
 
