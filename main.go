@@ -51,29 +51,30 @@ func main() {
 
 		if *fSecret != "" {
 			token, err = jwt.Parse([]byte(*fToken), jwt.WithKey(jwa.HS256, []byte(*fSecret)))
-		} else {
-			token, err = jwt.Parse([]byte(*fToken))
-		}
-
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Fprintln(stderr, "\nToken decoding details:")
-
-		if *fSecret != "" {
-			if err := jwt.Validate(token); err != nil {
-				fmt.Fprintln(stderr, " * Token is invalid!")
+			if err != nil {
+				fmt.Fprintf(stderr, "\nERROR: Can't verify token: %v\n", err)
 			} else {
-				fmt.Fprintln(stderr, " * Token is valid!")
+				fmt.Fprintln(stderr, "\nToken decoding details:")
+				if err := jwt.Validate(token); err != nil {
+					fmt.Fprintf(stderr, " * Token is invalid: %v\n", err)
+				} else {
+					fmt.Fprintln(stderr, " * Token is valid!")
+				}
+			}
+		} else {
+			fmt.Fprintln(stderr, "\nWARNING: No -secret flag provided. Can't verify token.")
+		}
+
+		if token == nil {
+			token, err = jwt.Parse([]byte(*fToken), jwt.WithVerify(false))
+			if err != nil {
+				fmt.Fprintf(stderr, "\nERROR: Can't parse token: %v\n", err)
+				os.Exit(1)
 			}
 		}
 
-		fmt.Fprintf(stderr, "\nToken claims:\n")
 		claims, _ := token.AsMap(context.Background())
-		for k, v := range claims {
-			fmt.Fprintf(stderr, " * %v: %+v\n", k, v)
-		}
-		fmt.Fprintln(stderr)
+		printClaims(stderr, claims)
 
 		return
 	}
@@ -112,16 +113,31 @@ func main() {
 		}
 		tokenStr := string(tokenPayload)
 
-		fmt.Fprintln(stderr)
-		fmt.Fprintln(stderr, "Token:", tokenStr)
+		fmt.Fprintf(stderr, "\nToken: ")
 		fmt.Printf("%s", tokenStr)
+		fmt.Fprintln(stderr)
 
 		claims, _ = token.AsMap(context.Background())
-		fmt.Fprintf(stderr, "\n\nClaims: %#v\n", claims)
-		fmt.Fprintln(stderr)
+		printClaims(stderr, claims)
 
 		return
 	}
+}
+
+// An improved version of fmt.Sprintf("%#v", claims) with newlines.
+func printClaims(stderr io.Writer, claims map[string]interface{}) {
+	fmt.Fprintln(stderr, "\nClaims: map[string]interface{}{")
+
+	// Sort keys for stable output
+	keys := make([]string, 0, len(claims))
+	for k := range claims {
+		keys = append(keys, k)
+	}
+
+	for _, k := range keys {
+		fmt.Fprintf(stderr, "    %q: %#v,\n", k, claims[k])
+	}
+	fmt.Fprintln(stderr, "}")
 }
 
 var usage = `jwtutil %s
