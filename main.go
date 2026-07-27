@@ -92,6 +92,11 @@ func main() {
 		// Encode new JWT token.
 		token := jwt.New()
 
+		// Stamp iat on every token; an explicit iat in -claims overrides it.
+		if err := token.Set(jwt.IssuedAtKey, time.Now()); err != nil {
+			log.Fatal(err)
+		}
+
 		var claims map[string]interface{}
 		if *fClaims != "" {
 			err := json.Unmarshal([]byte(*fClaims), &claims)
