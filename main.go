@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"time"
 
 	"github.com/lestrrat-go/jwx/v2/jwa"
 	"github.com/lestrrat-go/jwx/v2/jwt"
@@ -50,7 +51,9 @@ func main() {
 		var err error
 
 		if *fSecret != "" {
-			token, err = jwt.Parse([]byte(*fToken), jwt.WithKey(jwa.HS256, []byte(*fSecret)))
+			// WithValidate(false): check the signature only, so expired tokens
+			// still decode; claim validity is reported via jwt.Validate below.
+			token, err = jwt.Parse([]byte(*fToken), jwt.WithKey(jwa.HS256, []byte(*fSecret)), jwt.WithValidate(false))
 			if err != nil {
 				fmt.Fprintf(stderr, "\nERROR: Can't verify token: %v\n", err)
 			} else {
@@ -66,7 +69,7 @@ func main() {
 		}
 
 		if token == nil {
-			token, err = jwt.Parse([]byte(*fToken), jwt.WithVerify(false))
+			token, err = jwt.Parse([]byte(*fToken), jwt.WithVerify(false), jwt.WithValidate(false))
 			if err != nil {
 				fmt.Fprintf(stderr, "\nERROR: Can't parse token: %v\n", err)
 				os.Exit(1)
@@ -75,6 +78,7 @@ func main() {
 
 		claims, _ := token.AsMap(context.Background())
 		printClaims(stderr, claims)
+		printTimes(stderr, token)
 
 		return
 	}
@@ -119,8 +123,67 @@ func main() {
 
 		claims, _ = token.AsMap(context.Background())
 		printClaims(stderr, claims)
+		printTimes(stderr, token)
 
 		return
+	}
+}
+
+const timeFormat = "2006-01-02 15:04:05 MST"
+
+// printTimes renders the iat/exp claims as absolute + relative times, e.g.
+//
+//	Issued at: 2024-03-27 20:59:24 CET (5 minutes ago)
+//	Expiry:    2024-03-27 21:59:24 CET (will expire in 55 minutes)
+func printTimes(stderr io.Writer, token jwt.Token) {
+	iat, exp := token.IssuedAt(), token.Expiration()
+	if iat.IsZero() && exp.IsZero() {
+		return
+	}
+	fmt.Fprintln(stderr)
+	if !iat.IsZero() {
+		fmt.Fprintf(stderr, "Issued at: %s (%s)\n", iat.Local().Format(timeFormat), relativeIssued(iat))
+	}
+	if !exp.IsZero() {
+		fmt.Fprintf(stderr, "Expiry:    %s (%s)\n", exp.Local().Format(timeFormat), relativeExpiry(exp))
+	}
+}
+
+func relativeIssued(t time.Time) string {
+	d := time.Since(t)
+	switch {
+	case d < 0:
+		return "in " + humanDuration(-d) + " — clock skew?"
+	case d < 2*time.Second:
+		return "just now"
+	}
+	return humanDuration(d) + " ago"
+}
+
+func relativeExpiry(t time.Time) string {
+	d := time.Until(t)
+	if d < 0 {
+		return "expired " + humanDuration(-d) + " ago"
+	}
+	return "will expire in " + humanDuration(d)
+}
+
+func humanDuration(d time.Duration) string {
+	plural := func(n int64, unit string) string {
+		if n == 1 {
+			return fmt.Sprintf("1 %s", unit)
+		}
+		return fmt.Sprintf("%d %ss", n, unit)
+	}
+	switch {
+	case d < time.Minute:
+		return plural(int64(d.Round(time.Second).Seconds()), "second")
+	case d.Round(time.Minute) < time.Hour:
+		return plural(int64(d.Round(time.Minute).Minutes()), "minute")
+	case d.Round(time.Hour) < 24*time.Hour:
+		return plural(int64(d.Round(time.Hour).Hours()), "hour")
+	default:
+		return plural(int64(d.Round(24*time.Hour).Hours()/24), "day")
 	}
 }
 
