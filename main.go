@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"time"
 
 	"github.com/lestrrat-go/jwx/v2/jwa"
 	"github.com/lestrrat-go/jwx/v2/jwt"
@@ -87,6 +88,11 @@ func main() {
 	if *fEncode {
 		// Encode new JWT token.
 		token := jwt.New()
+
+		// Stamp iat on every token; an explicit iat in -claims overrides it.
+		if err := token.Set(jwt.IssuedAtKey, time.Now()); err != nil {
+			log.Fatal(err)
+		}
 
 		var claims map[string]interface{}
 		if *fClaims != "" {
